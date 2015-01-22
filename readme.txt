@@ -4,7 +4,7 @@ Donate link: http://codeboxr.com
 Tags: custom post types, rss
 Requires at least: 3.0
 Tested up to: 3.9.1
-Stable tag: 1.0
+Stable tag: 1.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -59,6 +59,10 @@ Sure, just try it.
 
 
 == Changelog ==
+= 1.2 =
+* Admin panel refreshed
+* Strict standard error fixed
+* Translation added
 
 = 1.1 =
 * First Release

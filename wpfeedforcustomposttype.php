@@ -4,11 +4,11 @@ Plugin Name: Codeboxr RSS Feed for custom post types
 Plugin URI: http://codeboxr.com/product/rss-feed-manager-for-custom-post-types
 Description: Shows or merges feeds for custom post type with default posts 
 Author: Codeboxr
-Version: 1.1
+Version: 1.2
 Author URI: http://codeboxr.com
 */
 /*
-    Copyright 2012-2013  Codeboxr (email : sabuj@codeboxr.com)
+    Copyright 2012-2015  Codeboxr (email : sabuj@codeboxr.com)
     
 
     This program is free software; you can redistribute it and/or modify
@@ -50,18 +50,17 @@ if (!defined('WP_PLUGIN_URL')) {
 }
 
 $wpfeedforcustomposttype = get_option('wpfeedforcustomposttype');
-/*
-if($wpfeedforcustomposttype['show'] == '1')
-{
-    add_action('wp_head', 'wpcfeed_addstyle');
-    add_action('wp_footer','wpcfeed_addhtml');
-}
-*/
+
 register_activation_hook( __FILE__, 'wpfeedforcustomposttype_activate' );
 register_deactivation_hook(__FILE__, 'wpfeedforcustomposttype_deactivation');
 add_action('admin_menu', 'wpfeedforcustomposttype_admin');   //adding menu in admin menu settings
 
+// Add actions to load language
+add_action('init', 'textdomain_init_wpfeedforcustomposttype');
 
+function textdomain_init_wpfeedforcustomposttype(){
+    load_plugin_textdomain('wpfeedforcustomposttype', false, basename( dirname( __FILE__ ) ) . '/languages' );
+}
 
 
 
@@ -92,7 +91,7 @@ function wpfeedforcustomposttype_admin()
     global $wpfeedforcustomposttype_hook, $wpfeedforcustomposttype;
     //add_options_page(page_title, menu_title, access_level/capability, file, [function]);
     if (function_exists('add_options_page')) {
-            $page_hook = add_options_page('RSS for Custom Posts types', 'RSS 4 Posts Types', 'manage_options', 'wpfeedforcustomposttype', 'wpfeedforcustomposttype_admin_option');
+            $page_hook = add_options_page(__('RSS for Custom Posts types','wpfeedforcustomposttype'), __('RSS 4 Posts Types', 'wpfeedforcustomposttype'), 'manage_options', 'wpfeedforcustomposttype', 'wpfeedforcustomposttype_admin_option');
     }    
     
 
@@ -168,157 +167,177 @@ function wpfeedforcustomposttype_admin_option()
         
 	if(isset($_POST['uwpfeedforcustomposttype'])) {
 		check_admin_referer('wpfeedforcustomposttype');
+
+//		echo '<pre>';
+//		print_r($_POST);
+//		echo '<pre>';
+
 		//post var
 		foreach($alltypeposts  as $key => $value){
-                    $wpfeedforcustomposttype[$key] = trim($_POST['pt'.$key]);                    
-                    //var_dump($_POST['pt'.$key]);
-                }                                               
-                update_option('wpfeedforcustomposttype',$wpfeedforcustomposttype);
-                //var_dump($wpfeedforcustomposttype);
+            $wpfeedforcustomposttype[$key] = isset($_POST['pt'.$key])? trim($_POST['pt'.$key]): '';
+            //var_dump($_POST['pt'.$key]);
+        }
+        update_option('wpfeedforcustomposttype',$wpfeedforcustomposttype);
+        //var_dump($wpfeedforcustomposttype);
                 
 	}//end main if       
         
         $wpfeedforcustomposttype = (array)get_option('wpfeedforcustomposttype');       
 
         if(isset($_POST['uwpfeedforcustomposttype'])) {
-            echo '<!-- Last Action --><div id="message" class="updated fade"><p>Options updated</p></div>';
+            echo '<!-- Last Action --><div id="message" class="updated fade"><p>'.__('Options updated','wpfeedforcustomposttype').'</p></div>';
         }
 
 ?>
-    <div class="wrap">
-        <div class="icon32" id="icon-options-general"><br></div>
-        <h2>RSS Feed Manager for Custom Post Types</h2>
-        <div id="poststuff" class="metabox-holder has-right-sidebar">                                                    
-            <div id="post-body">
-                <div id="post-body-content">
-                    <style type="text/css">
-                        #post-body p.description{
-                            white-space: -moz-pre-wrap !important;  /* Mozilla, since 1999 */
-                            white-space: -pre-wrap;      /* Opera 4-6 */
-                            white-space: -o-pre-wrap;    /* Opera 7 */
-                            white-space: pre-wrap;       /* css-3 */
-                            word-wrap: break-word;       /* Internet Explorer 5.5+ */
-                            word-break: break-all;
-                            white-space: normal;
-                        }
-                    </style>   
-                    <div class="stuffbox">
-                        <h3>Plugin Settings</h3>
-                        <div class="inside">
-                            <form method="post" action="<?php echo $_SERVER['REQUEST_URI']; ?>">
-                                <?php wp_nonce_field('wpfeedforcustomposttype'); ?>
-                                <h3>Plugin Options</h3>
-                                <table cellspacing="0" class="widefat post fixed">
-                                    <thead>
-                                    <tr>
-                                        <th style="" class="manage-column" scope="col">Post Types</th>
-                                        <th style="" class="manage-column" scope="col">Selection</th>
-                                    </tr>
-                                    </thead>
-                                    <tfoot>
-                                    <tr>
-                                        <th style="" class="manage-column" scope="col">Post Types</th>
-                                        <th style="" class="manage-column" scope="col">Selection</th>
-                                    </tr>
-                                    </tfoot>
-                                    <tbody>                
-                                            <?php                                                                                
-                                            //var_dump($alltypeposts);
-                                            echo '<tr><td colspan="2"><h3>Built-in Posts Types</h3></td></tr>';
-                                            foreach ($builtinposts  as $key => $value ) {
+	<div class="wrap">
 
-                                                echo '<tr>';                        
-                                                echo '<td>'. $value.'['.$key. ']</td>';
-                                                echo '<td><label for="pt'.$key.'"><input id="pt'.$key.'" type="checkbox" name="pt'.$key.'" '.checked('on',$wpfeedforcustomposttype[$key],false).' /> Enable/Disable</label></td>';
-                                                echo '</tr>';
-                                            }
-                                            echo '<tr><td colspan="2"><h3>Custom Posts Types</h3></td></tr>';
-                                            foreach ($customposts  as $key => $value ) {
+		<div id="icon-options-general" class="icon32"><span class="dashicons dashicons-rss"></span></div>
+		<h2><?php echo __('RSS Feed Manager for Custom Post Types', 'wpfeedforcustomposttype'); ?></h2>
 
-                                                echo '<tr>';                        
-                                                echo '<td>'. $value.'['.$key. ']</td>';
-                                                echo '<td><label for="pt'.$key.'"><input id="pt'.$key.'" type="checkbox" name="pt'.$key.'" '.checked('on',$wpfeedforcustomposttype[$key],false).' /> Enable/Disable</label></td>';
-                                                echo '</tr>';
-                                            }
-                                            ?>                    
+		<div id="poststuff">
 
-                                        <tr valign="top">
-                                                <td></td>
-                                                <td><input type="submit" name="uwpfeedforcustomposttype" class="button-primary" value="Save Changes" ></td>
-                                        </tr>                 
-                                    </tbody>
-                                </table>        
-                                </form>
-                        </div>
-                    </div>  <!-- stuffbox -->  
-                </div> <!-- post-body-content -->
-             </div> <!-- post-body -->
-             <div id="side-info-column" class="inner-sidebar">                                        
-                    <?php 
-                    $plugin_data = get_plugin_data( __FILE__ );
-                    //var_dump($plugin_data);
-                    ?>                                        
-                    <div class="postbox">
-                        <h3>Plugin Info</h3>
-                        <div class="inside">
-                                <p>Plugin Name : <?php echo $plugin_data['Title']?> <?php echo $plugin_data['Version']?></p>
-                                <!--p>Plugin Url: <?php echo $plugin_data['PluginURI']; ?></p-->
-                                <p>Author : <?php echo $plugin_data['Author']?></p>
-                                <p>Website : <a href="http://codeboxr.com" target="_blank">codeboxr.com</a></p>
-                                <p>Email : <a href="mailto:info@codeboxr.com" target="_blank">info@codeboxr.com</a></p>
-                                <p>Twitter : @<a href="http://twitter.com/codeboxr" target="_blank">@Codeboxr</a></p>
-                                <p>Facebook : @<a href="http://facebook.com/codeboxr" target="_blank">http://facebook.com/codeboxr</a></p>
-                                <p>Linkedin : @<a href="www.linkedin.com/company/codeboxr" target="_blank">codeboxr</a></p>
-                                <p>Gplus : @<a href="https://plus.google.com/104289895811692861108" target="_blank">Google Plus</a></p>
-                        </div>
-                    </div>                                                       
-                    <div class="postbox">
-                        <h3>Help & Supports</h3>
-                        <div class="inside">
-                            <p>Support: <a href="http://codeboxr.com/contact-us.html" target="_blank">Contact Us</a></p>
-                            <p><i class="icon-envelope"></i> <a href="mailto:info@codeboxr.com">info@codeboxr.com</a></p>                            
-                        </div>
-                    </div>  
-                    <div class="postbox">
-                        <h3>Codeboxr Updates</h3>
-                        <div class="inside">
-                            <?php
-                                include_once(ABSPATH . WPINC . '/feed.php');
-                                if(function_exists('fetch_feed')) {
-                                        $feed = fetch_feed('http://codeboxr.com/feed');
-                                        // $feed = fetch_feed('http://feeds.feedburner.com/codeboxr'); // this is the external website's RSS feed URL
-                                        if (!is_wp_error($feed)) : $feed->init();
-                                                $feed->set_output_encoding('UTF-8'); // this is the encoding parameter, and can be left unchanged in almost every case
-                                                $feed->handle_content_type(); // this double-checks the encoding type
-                                                $feed->set_cache_duration(21600); // 21,600 seconds is six hours
-                                                $limit = $feed->get_item_quantity(6); // fetches the 18 most recent RSS feed stories
-                                                $items = $feed->get_items(0, $limit); // this sets the limit and array for parsing the feed
+			<div id="post-body" class="metabox-holder columns-2">
 
-                                                $blocks = array_slice($items, 0, 6); // Items zero through six will be displayed here
-                                                echo '<ul>';
-                                                foreach ($blocks as $block) {
-                                                    $url = $block->get_permalink();
-                                                    echo '<li><a target="_blank" href="'.$url.'">';
-                                                    echo '<strong>'.$block->get_title().'</strong></a><br/>';
-                                                    //var_dump($block->get_description());
-                                                    //echo $block->get_description();
-                                                    //echo substr($block->get_description(),0, strpos($block->get_description(), "<br />")+4);
-                                                    echo '</li>';
+				<!-- main content -->
+				<div id="post-body-content">
 
-                                                }//end foreach
-                                                echo '</ul>';
+					<div class="meta-box-sortables ui-sortable">
+
+						<div class="postbox">
+							<div class="inside">
+								<h2><?php echo __('Plugin Settings','wpfeedforcustomposttype'); ?></h2>
+								<form method="post" action="<?php echo $_SERVER['REQUEST_URI']; ?>">
+									<?php wp_nonce_field('wpfeedforcustomposttype'); ?>
+									<table cellspacing="0" class="widefat">
+										<thead>
+										<tr>
+											<th style="" class="row-title" scope="col"><?php echo __('Post Types','wpfeedforcustomposttype') ?></th>
+											<th style="" class="row-title" scope="col"><?php echo __('Selection','wpfeedforcustomposttype') ?></th>
+										</tr>
+										</thead>
+										<tfoot>
+										<tr>
+											<th style="" class="row-title" scope="col"><?php echo __('Post Types','wpfeedforcustomposttype') ?></th>
+											<th style="" class="row-title" scope="col"><?php echo __('Selection','wpfeedforcustomposttype') ?></th>
+										</tr>
+										</tfoot>
+										<tbody>
+										<?php
+										//var_dump($alltypeposts);
+										echo '<tr><td colspan="2"><h3>'.__('Built-in Posts Types','wpfeedforcustomposttype'),'</h3></td></tr>';
+										foreach ($builtinposts  as $key => $value ) {
+											$oldval = isset($wpfeedforcustomposttype[$key]) ? $wpfeedforcustomposttype[$key]: '';
+
+											echo '<tr>';
+											echo '<td>'. $value.'['.$key. ']</td>';
+											echo '<td><label for="pt'.$key.'"><input id="pt'.$key.'" type="checkbox" name="pt'.$key.'" '.checked('on',$oldval,false).' /> Enable/Disable</label></td>';
+											echo '</tr>';
+										}
+										echo '<tr><td colspan="2"><h3>'. __('Custom Posts Types','wpfeedforcustomposttype').'</h3></td></tr>';
+										foreach ($customposts  as $key => $value ) {
+											$oldval = isset($wpfeedforcustomposttype[$key]) ? $wpfeedforcustomposttype[$key]: '';
+
+											echo '<tr>';
+											echo '<td>'. $value.'['.$key. ']</td>';
+											echo '<td><label for="pt'.$key.'"><input id="pt'.$key.'" type="checkbox" name="pt'.$key.'" '.checked('on',$oldval,false).' /> Enable/Disable</label></td>';
+											echo '</tr>';
+										}
+										?>
+
+										<tr valign="top">
+											<td></td>
+											<td><input type="submit" name="uwpfeedforcustomposttype" class="button-primary" value="<?php echo  __('Save Changes','wpfeedforcustomposttype'); ?>" ></td>
+										</tr>
+										</tbody>
+									</table>
+								</form>
+							</div> <!-- .inside -->
+
+						</div> <!-- .postbox -->
+
+					</div> <!-- .meta-box-sortables .ui-sortable -->
+
+				</div> <!-- post-body-content -->
+
+				<!-- sidebar -->
+				<div id="postbox-container-1" class="postbox-container">
+
+					<div class="meta-box-sortables">
+
+							<?php
+							$plugin_data = get_plugin_data( __FILE__ );
+							//var_dump($plugin_data);
+							?>
+							<div class="postbox">
+								<h3><span>Plugin Info</span></h3>
+								<div class="inside">
+									<p>Plugin Name : <?php echo $plugin_data['Title']?> <?php echo $plugin_data['Version']?></p>
+									<!--p>Plugin Url: <?php echo $plugin_data['PluginURI']; ?></p-->
+									<p>Author : <?php echo $plugin_data['Author']?></p>
+									<p>Website : <a href="http://codeboxr.com" target="_blank">codeboxr.com</a></p>
+									<p>Email : <a href="mailto:info@codeboxr.com" target="_blank">info@codeboxr.com</a></p>
+									<p>
+										<a href="http://facebook.com/codeboxr" target="_blank"><span class="dashicons dashicons-facebook-alt"></span></a>
+										<a href="http://twitter.com/codeboxr" target="_blank"><span class="dashicons dashicons-twitter"></span></a>
+										<a href="http://linkedin.com/company/codeboxr" target="_blank">Ln<!--span class="genericon genericon-linkedin-alt"></span--></a>
+										<a href="https://plus.google.com/+codeboxr" target="_blank"><span class="dashicons dashicons-googleplus"></span></a>
+									</p>
 
 
-                                        endif;
-                                }
-                                ?>
-                        </div>
-                    </div>                                                  
-            </div> <!-- side-info-column -->
-        </div> <!-- poststuff -->
-    </wrap>  <!-- wrap -->
-    
-    
+
+								</div> <!-- .inside -->
+
+							</div> <!-- .postbox -->
+
+							<div class="postbox">
+								<h3><span>Help & Supports</span></h3>
+								<div class="inside">
+									<p>Support: <a href="http://codeboxr.com/contact-us.html" target="_blank">Contact Us</a></p>
+									<p><i class="icon-envelope"></i> <a href="mailto:info@codeboxr.com">info@codeboxr.com</a></p>
+								</div>
+							</div>
+							<div class="postbox">
+								<h3><span>Codeboxr Updates</span></h3>
+								<div class="inside">
+									<?php
+									include_once(ABSPATH . WPINC . '/feed.php');
+									if(function_exists('fetch_feed')) {
+										$feed = fetch_feed('http://codeboxr.com/feed');
+										// $feed = fetch_feed('http://feeds.feedburner.com/codeboxr'); // this is the external website's RSS feed URL
+										if (!is_wp_error($feed)) : $feed->init();
+											$feed->set_output_encoding('UTF-8'); // this is the encoding parameter, and can be left unchanged in almost every case
+											$feed->handle_content_type(); // this double-checks the encoding type
+											$feed->set_cache_duration(21600); // 21,600 seconds is six hours
+											$limit = $feed->get_item_quantity(6); // fetches the 18 most recent RSS feed stories
+											$items = $feed->get_items(0, $limit); // this sets the limit and array for parsing the feed
+
+											$blocks = array_slice($items, 0, 6); // Items zero through six will be displayed here
+											echo '<ul>';
+											foreach ($blocks as $block) {
+												$url = $block->get_permalink();
+												echo '<li><a target="_blank" href="'.$url.'">';
+												echo '<strong>'.$block->get_title().'</strong></a><br/>';
+												//var_dump($block->get_description());
+												//echo $block->get_description();
+												//echo substr($block->get_description(),0, strpos($block->get_description(), "<br />")+4);
+												echo '</li>';
+
+											}//end foreach
+											echo '</ul>';
+										endif;
+									}									?>
+								</div>
+							</div>
+					</div> <!-- .meta-box-sortables -->
+
+				</div> <!-- #postbox-container-1 .postbox-container -->
+
+			</div> <!-- #post-body .metabox-holder .columns-2 -->
+
+			<br class="clear">
+		</div> <!-- #poststuff -->
+
+	</div> <!-- .wrap -->
     <?php
 }
 
